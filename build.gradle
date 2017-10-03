@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 buildscript {
     repositories {
         mavenCentral()
@@ -8,7 +10,7 @@ buildscript {
 	}
 }
 
-group = 'snikit'
+
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
@@ -35,7 +37,28 @@ dependencies {
     testCompile("org.springframework.boot:spring-boot-starter-test")
 }
 
-task buildDocker(type: Docker, dependsOn: build) {
+
+
+task createDockerFile( dependsOn: build)  {
+    def file = new File("$projectDir/Dockerfile")
+    file.createNewFile()
+    
+  
+    
+    file.text = """FROM java:8
+VOLUME /tmp
+ADD target/$jar.archiveName app.jar
+ENV JAVA_OPTS=""
+ENTRYPOINT exec java \$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app.jar
+"""
+}
+
+
+
+
+task buildDockerImage(type: Docker, dependsOn: createDockerFile) {
+	group = 'snikitz'
+
   applicationName = jar.baseName
   dockerfile = file('Dockerfile')
   doFirst {
@@ -45,3 +68,6 @@ task buildDocker(type: Docker, dependsOn: build) {
     }
   }
 }
+
+
+task dockIt(type: Docker, dependsOn: buildDockerImage)
